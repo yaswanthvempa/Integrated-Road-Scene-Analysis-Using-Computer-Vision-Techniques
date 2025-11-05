@@ -1,0 +1,14 @@
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+edges = cv2.Canny(gray, 50, 150)
+lines = cv2.HoughLinesP(edges, 1, np.pi/180, 80, minLineLength=100, maxLineGap=50)
+lane_img = img.copy()
+
+if lines is not None:
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        cv2.line(lane_img, (x1,y1), (x2,y2), (0,255,0), 3)
+
+plt.imshow(cv2.cvtColor(lane_img, cv2.COLOR_BGR2RGB))
+plt.title("Unit 3: Lane Detection using Hough Transform")
+plt.axis("off")
+plt.show()
