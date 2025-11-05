@@ -1,0 +1,98 @@
+# --- Enhanced UNIT 5: Integrated Vision System ---
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+import imageio, os
+
+# --- Auto-detect image path ---
+image_path = None
+for f in os.listdir("/content"):
+    if "lane" in f.lower() and f.lower().endswith((".jpg", ".png", ".jpeg")):
+        image_path = os.path.join("/content", f)
+        break
+
+if not image_path:
+    raise FileNotFoundError("❌ No image found matching 'lane'")
+else:
+    print(f"✅ Found image: {image_path}")
+
+video_path = "/content/solidWhiteRight.mp4"
+
+# --- Load image ---
+img = cv2.imread(image_path)
+if img is None:
+    raise FileNotFoundError("❌ Could not read image file.")
+
+print("✅ Image loaded successfully for Unit 5 integration.")
+
+# -----------------------------------------------------------
+# 🔹 Unit 1: Edge Detection
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+blur = cv2.GaussianBlur(gray, (5, 5), 0)
+edges = cv2.Canny(blur, 50, 150)
+
+# -----------------------------------------------------------
+# 🔹 Unit 2: Shape & Region Detection (Enhanced)
+# Use adaptive threshold and contours
+adaptive_thresh = cv2.adaptiveThreshold(
+    gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 5
+)
+contours, _ = cv2.findContours(adaptive_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+shape_img = img.copy()
+cv2.drawContours(shape_img, contours, -1, (0, 255, 0), 2)
+
+# -----------------------------------------------------------
+# 🔹 Unit 3: Lane Detection (Hough Transform)
+lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 80, minLineLength=100, maxLineGap=50)
+lane_img = img.copy()
+if lines is not None:
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        cv2.line(lane_img, (x1, y1), (x2, y2), (0, 255, 0), 3)
+
+# -----------------------------------------------------------
+# 🔹 Unit 4: Optical Flow (More Visual Version)
+reader = imageio.get_reader(video_path)
+frames = []
+for i, frame in enumerate(reader):
+    frames.append(cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY))
+    if i > 1:
+        break
+
+prev, nxt = frames[0], frames[1]
+flow = cv2.calcOpticalFlowFarneback(prev, nxt, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+
+# Create HSV map for better visualization
+hsv = np.zeros((prev.shape[0], prev.shape[1], 3), dtype=np.uint8)
+hsv[..., 1] = 255
+mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
+hsv[..., 0] = ang * 180 / np.pi / 2
+hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
+flow_rgb = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+
+# -----------------------------------------------------------
+# 🔹 Display all results
+plt.figure(figsize=(15, 10))
+
+plt.subplot(2, 2, 1)
+plt.imshow(edges, cmap="gray")
+plt.title("Unit 1: Edge Detection")
+plt.axis("off")
+
+plt.subplot(2, 2, 2)
+plt.imshow(cv2.cvtColor(shape_img, cv2.COLOR_BGR2RGB))
+plt.title("Unit 2: Shape & Region Detection (Enhanced)")
+plt.axis("off")
+
+plt.subplot(2, 2, 3)
+plt.imshow(cv2.cvtColor(lane_img, cv2.COLOR_BGR2RGB))
+plt.title("Unit 3: Lane Detection (Hough Transform)")
+plt.axis("off")
+
+plt.subplot(2, 2, 4)
+plt.imshow(flow_rgb)
+plt.title("Unit 4: Optical Flow – Motion Visualization (HSV)")
+plt.axis("off")
+
+plt.suptitle("UNIT 5: Enhanced Integrated Road Scene Analysis", fontsize=14, fontweight="bold")
+plt.show()
