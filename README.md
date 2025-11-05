@@ -1,0 +1,2 @@
+# Integrated-Road-Scene-Analysis-Using-Computer-Vision-Techniques
+This project presents an integrated approach to road scene analysis using multiple computer vision techniques. The system combines edge detection, shape and region segmentation, lane detection through Hough Transform, and motion estimation using optical flow. Each topic contributes a unique layer of understanding of the road environment.
